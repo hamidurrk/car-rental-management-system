@@ -21,6 +21,7 @@ class CarRentalManagementSystem:
         self.theme = {
             "title": "magenta",
             "info": "blue",
+            "normal": "white",
             "error": "red",
             "warning": "yellow",
             "success": "green"
@@ -39,8 +40,8 @@ class CarRentalManagementSystem:
     
     def open_files(self):
         self.vehicle_file = open(self.VEHICLES_FILE, "r+")
-        self.customer_file = open(self.CUSTOMERS_FILE, "a")
-        self.rented_vehicle_file = open(self.RENTED_VEHICLES_FILE, "r+")
+        self.customer_file = open(self.CUSTOMERS_FILE, "a+")
+        self.rented_vehicle_file = open(self.RENTED_VEHICLES_FILE, "a+")
         self.transaction_file = open(self.TRANSACTION_FILE, "a")
     
     def close_files(self):
@@ -137,6 +138,9 @@ class CarRentalManagementSystem:
     def print_info(self, text):
         return self.print_colored(text, self.theme["info"])
     
+    def print_normal(self, text):
+        return self.print_colored(text, self.theme["normal"])
+    
     def print_success(self, text):
         return self.print_colored(text, self.theme["success"])
     
@@ -166,10 +170,11 @@ class CarRentalManagementSystem:
         self.println(self.print_info(title), center=True)
         self.print_bar("=")
                 
-    def print_header(self):
+    def print_header(self, header:str):
         # self.println(char="\u2588")
         self.print_bar("=")
-        self.println(self.print_title(self.APP_NAME), center=True)
+        self.println(self.print_title(header), center=True)
+        self.print_bar("=")
         
     def print_footer(self):
         self.print_bar("=")
@@ -203,7 +208,7 @@ class CarRentalManagementSystem:
                 col_widths[i] = max(col_widths[i], len(str(item)))
 
         if title:
-            title = self.print_title(title)
+            title = self.print_info(title)
             print("---".join("-" * width for width in col_widths))
             print(f"{title.center(sum(col_widths)+((len(col_widths))*2)+1)}")
             print("---".join("-" * width for width in col_widths))
@@ -220,15 +225,22 @@ class CarRentalManagementSystem:
             padded_row = row + [""] * (max_cols - len(row))
             print(" | ".join(f"{str(item).ljust(width)}" for item, width in zip(padded_row, col_widths)))
             print("-+-".join("-" * width for width in col_widths))
-            
-    def menu(self):
-        self.print_bar("=")
-        self.println("What do you want to do:")
+    
+    def age(self, birthday: str):
+        today = datetime.now()
+        return today.year - birthday.year - ((today.month, today.day) < (birthday.month, birthday.day))
+                    
+    def menu(self, count):
+        if count == 0:
+            self.print_header(header=self.APP_NAME)
+        else:
+            self.print_header(header="Main Menu")
+
         for key, value in self.menu_options.items():
             self.println(self.print_info(f"{key}) {value}"), adjust=9)
         while True:
             try:
-                option_choice = int(self.take_input("Your choice: "))
+                option_choice = int(self.take_input("Enter a choice [0-4]: "))
                 option = self.menu_options[str(option_choice)]
                 break
             except ValueError:
@@ -253,18 +265,21 @@ class CarRentalManagementSystem:
     
     def rent_a_car(self):
         is_car_available = True
+        is_valid_birthday = False
+        is_new_customer = False
+        new_rent_query = []
         
-        # self.print_section_title("Rent a Car")
-        # input_car_no = self.take_input("Enter registration number: ")
-        # if self.search_data(self.get_vehicle_data(), input_car_no) == None:
-        #     self.println(self.print_error("Car not owned by the company."), adjust=9)
-        # else:
-        #     if self.search_data(self.list_available_cars(return_cars=True), input_car_no) == None:
-        #         self.println(self.print_error(f"Car with registration number {input_car_no} is being rented."), adjust=9)
-        #         self.println(self.print_warning(f"Please pick another car from the available ones."), adjust=9)
-        #     else:
-        #         self.println(self.print_success(f"Car with registration number {input_car_no} is available."), adjust=9)
-        #         is_car_available = True
+        self.print_section_title("Rent a Car")
+        input_car_no = self.take_input("Enter registration number: ")
+        if self.search_data(self.get_vehicle_data(), input_car_no) == None:
+            self.println(self.print_error("Car not owned by the company."), adjust=9)
+        else:
+            if self.search_data(self.list_available_cars(return_cars=True), input_car_no) == None:
+                self.println(self.print_error(f"Car with registration number {input_car_no} is being rented."), adjust=9)
+                self.println(self.print_warning(f"Please pick another car from the available ones."), adjust=9)
+            else:
+                self.println(self.print_success(f"Car with registration number {input_car_no} is available."), adjust=9)
+                is_car_available = True
         
         if is_car_available:
             while True:
@@ -275,23 +290,54 @@ class CarRentalManagementSystem:
                     self.println(self.print_error("Invalid date format."), adjust=9)
                     self.println(self.print_warning("Please enter the date in DD/MM/YYYY format."), adjust=9)
                     continue
-                try:
-                    input_birthday = datetime.strptime(input_birthday, "%d/%m/%Y")
-                except ValueError:
-                    self.println(self.print_error("Invalid date format."), adjust=9)
-                    self.println(self.print_warning("Please enter the date in DD/MM/YYYY format."), adjust=9)
-                    
-                
-            
+                else:
+                    try:
+                        input_birthday = datetime.strptime(input_birthday, "%d/%m/%Y")
+                        if input_birthday > datetime.now():
+                            self.println(self.print_error("Date is in the future."), adjust=9)
+                            self.println(self.print_warning("Please enter a valid date."), adjust=9)
+                            continue
+                        else:
+                            is_valid_birthday = True
+                            break
+                    except ValueError:
+                        self.println(self.print_error("Date is invalid."), adjust=9)
+                        self.println(self.print_warning("Please enter a valid date."), adjust=9)
+        
+        if is_valid_birthday:
+            if self.search_data(self.get_customer_data(), input_birthday.strftime("%d/%m/%Y")) == None:
+                if self.age(input_birthday) < 18:
+                    self.println(self.print_warning("You must be at least 18 years old to rent a car."), adjust=9)
+                elif self.age(input_birthday) > 75:
+                    self.println(self.print_warning("You must be younger than 75 years old to rent a car."), adjust=9)
+                else:
+                    self.println(self.print_success("You are eligible to rent a car."), adjust=9)
+                    self.print_bar("-")
+                    self.println(self.print_title("Welcome to our car rental service!"),center=True)
+                    self.print_bar("-")
+                    self.println(self.print_info("Please register with your information below:"), adjust=9)
+                    is_new_customer = True
+            else:
+                customer_info = self.search_data(self.get_customer_data(), input_birthday.strftime("%d/%m/%Y"))
+                new_rent_query.append(input_car_no)
+                self.print_bar("-")
+                self.println(f"{self.print_normal("Hi,")} {self.print_title(f"{customer_info[1]}!")} {self.print_normal("Welcome back to our service!")}", adjust=27)
+                self.print_bar("-")
+                new_rent_query.append(input_birthday.strftime("%d/%m/%Y")) 
+                self.println(f"{self.print_normal("Car with registration number")} {self.print_success(input_car_no)} {self.print_normal("has been assigned to you.")}", adjust=27)
+                new_rent_query.append(datetime.now().strftime("%d/%m/%Y %H:%M"))
+                self.write_rented_vehicle_data(self.list_to_csv(new_rent_query))
+                self.println(self.print_success(f"Rent for {input_car_no} started successfully!"), adjust=9)
+    
     def main(self):
-        self.print_header()
+        iteration_count = 0
         while True:
-            option = self.menu()
+            option = self.menu(iteration_count)
             match option:
                 case "List available cars":
                     self.list_available_cars()
                 case "Rent a car":
-                    pass
+                    self.rent_a_car()
                 case "Return a car":
                     pass
                 case "Count the money":
@@ -299,9 +345,11 @@ class CarRentalManagementSystem:
                 case "Exit":
                     self.println(self.print_success("See you again!"), adjust=9)
                     break
+            iteration_count += 1
         self.print_footer()
                 
 if __name__ == "__main__":
     system = CarRentalManagementSystem()
     # system.main()
-    system.rent_a_car()
+    # system.rent_a_car()
+    system.write_rented_vehicle_data(system.list_to_csv(['KOL-99', '12/12/1985', '16/11/2024 01:05']))
