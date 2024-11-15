@@ -4,12 +4,14 @@
 # Submitted by: Md Hamidur Rahman Khan
 # Student ID: 002475552
 
+from datetime import datetime
 
 class CarRentalManagementSystem:
     def __init__(self):
         self.APP_NAME = "Car Rental Management System"
         self.AUTHOR = "Md Hamidur Rahman Khan"
         self.APP_WIDTH = 80
+        
         self.VEHICLES_FILE = "files/vehicles.txt"
         self.CUSTOMERS_FILE = "files/customers.txt"
         self.RENTED_VEHICLES_FILE = "files/rentedVehicles.txt"
@@ -30,6 +32,7 @@ class CarRentalManagementSystem:
                 "4": "Count the money",
                 "0": "Exit"
             }
+        self.available_cars_table_header = ["Reg. No.", "Model", "Price/Day", "Features"]
         
     def __del__(self):
         self.close_files()
@@ -97,6 +100,7 @@ class CarRentalManagementSystem:
         for line in data:
             if search_value in line:
                 return line
+        return None
             
     def remove_data_from_rented_vehicles(self, license_plate: str):
         rented_vehicles = self.get_rented_vehicle_data()
@@ -156,12 +160,16 @@ class CarRentalManagementSystem:
             print(f"{char}{wrt.center(value+7+adjust)}{char}")
         else:
             print(f"{char} {wrt.ljust(value-4+adjust)} {char}")
-        
+
+    def print_section_title(self, title):
+        self.print_bar("=")
+        self.println(self.print_info(title), center=True)
+        self.print_bar("=")
+                
     def print_header(self):
         # self.println(char="\u2588")
         self.print_bar("=")
         self.println(self.print_title(self.APP_NAME), center=True)
-        self.print_bar("=")
         
     def print_footer(self):
         self.print_bar("=")
@@ -174,8 +182,47 @@ class CarRentalManagementSystem:
         print(f"\033[F", end='')
         print(f"\033[{self.APP_WIDTH}G|")
         return input_value
-    
+
+    def print_list(self, list):
+        for line in list:
+            for value in line:
+                print(value, end=2*"\t")
+            print("")
+            
+    def print_table(self, data, title=None,headers=None):
+        if headers:
+            modified_headers = []
+            for header in headers:
+                header = self.print_title(header)
+                modified_headers.append(header)
+            data.insert(0, headers)
+        max_cols = max(len(row) for row in data)
+        col_widths = [0] * max_cols
+        for row in data:
+            for i, item in enumerate(row):
+                col_widths[i] = max(col_widths[i], len(str(item)))
+
+        if title:
+            title = self.print_title(title)
+            print("---".join("-" * width for width in col_widths))
+            print(f"{title.center(sum(col_widths)+((len(col_widths))*2)+1)}")
+            print("---".join("-" * width for width in col_widths))
+            
+        if headers:
+            data.remove(data[0])
+            print("=+=".join("=" * width for width in col_widths))
+            print(" | ".join(f"{str(item).center(width)}" for item, width in zip(headers, col_widths)))
+            print("=+=".join("=" * width for width in col_widths))
+        else:
+            print("-+-".join("-" * width for width in col_widths))
+        
+        for row in data:
+            padded_row = row + [""] * (max_cols - len(row))
+            print(" | ".join(f"{str(item).ljust(width)}" for item, width in zip(padded_row, col_widths)))
+            print("-+-".join("-" * width for width in col_widths))
+            
     def menu(self):
+        self.print_bar("=")
         self.println("What do you want to do:")
         for key, value in self.menu_options.items():
             self.println(self.print_info(f"{key}) {value}"), adjust=9)
@@ -191,13 +238,58 @@ class CarRentalManagementSystem:
         self.print_bar("=")
         return option
     
+    def list_available_cars(self, return_cars=False):
+        vehicles = self.get_vehicle_data()
+        rented_vehicles = self.get_rented_vehicle_data()
+        available_vehicles = []
+        
+        for vehicle in vehicles:
+            if self.search_data(rented_vehicles, vehicle[0]) == None:
+                available_vehicles.append(vehicle)
+        if return_cars:
+            return available_vehicles
+        else:
+            self.print_table(available_vehicles, title="Available Cars", headers=self.available_cars_table_header)
+    
+    def rent_a_car(self):
+        is_car_available = True
+        
+        # self.print_section_title("Rent a Car")
+        # input_car_no = self.take_input("Enter registration number: ")
+        # if self.search_data(self.get_vehicle_data(), input_car_no) == None:
+        #     self.println(self.print_error("Car not owned by the company."), adjust=9)
+        # else:
+        #     if self.search_data(self.list_available_cars(return_cars=True), input_car_no) == None:
+        #         self.println(self.print_error(f"Car with registration number {input_car_no} is being rented."), adjust=9)
+        #         self.println(self.print_warning(f"Please pick another car from the available ones."), adjust=9)
+        #     else:
+        #         self.println(self.print_success(f"Car with registration number {input_car_no} is available."), adjust=9)
+        #         is_car_available = True
+        
+        if is_car_available:
+            while True:
+                input_birthday = self.take_input("Please enter your birthday (DD/MM/YYYY): ")
+                input_birthday_format = input_birthday.split("/")
+                input_birthday_format = [len(item) for item in input_birthday_format]
+                if len(input_birthday_format) != 3 or input_birthday_format[0] != 2 or input_birthday_format[1] != 2 or input_birthday_format[2] != 4:
+                    self.println(self.print_error("Invalid date format."), adjust=9)
+                    self.println(self.print_warning("Please enter the date in DD/MM/YYYY format."), adjust=9)
+                    continue
+                try:
+                    input_birthday = datetime.strptime(input_birthday, "%d/%m/%Y")
+                except ValueError:
+                    self.println(self.print_error("Invalid date format."), adjust=9)
+                    self.println(self.print_warning("Please enter the date in DD/MM/YYYY format."), adjust=9)
+                    
+                
+            
     def main(self):
         self.print_header()
         while True:
             option = self.menu()
             match option:
                 case "List available cars":
-                    pass
+                    self.list_available_cars()
                 case "Rent a car":
                     pass
                 case "Return a car":
@@ -211,4 +303,5 @@ class CarRentalManagementSystem:
                 
 if __name__ == "__main__":
     system = CarRentalManagementSystem()
-    system.main()
+    # system.main()
+    system.rent_a_car()
