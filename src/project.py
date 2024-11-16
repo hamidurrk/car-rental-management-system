@@ -167,7 +167,6 @@ class CarRentalManagementSystem:
         self.print_bar("=")
                 
     def print_header(self, header:str):
-        # self.println(char="\u2588")
         self.print_bar("=")
         self.println(self.print_title(header), center=True)
         self.print_bar("=")
@@ -359,7 +358,10 @@ class CarRentalManagementSystem:
             while True:
                 input_birthday = self.take_input("Please enter your birthday (DD/MM/YYYY): ")
                 input_birthday_format = input_birthday.split("/")
-                input_birthday_format = [len(item) for item in input_birthday_format]
+                input_birthday_format_list = []
+                for item in input_birthday_format:
+                    input_birthday_format_list.append(len(item))
+                input_birthday_format = input_birthday_format_list
                 if len(input_birthday_format) != 3 or input_birthday_format[0] != 2 or input_birthday_format[1] != 2 or input_birthday_format[2] != 4:
                     self.println(self.print_error("Invalid date format."), adjust=9)
                     self.println(self.print_warning("Please enter the date in DD/MM/YYYY format."), adjust=9)
@@ -539,5 +541,3 @@ class CarRentalManagementSystem:
 if __name__ == "__main__":
     system = CarRentalManagementSystem()
     system.main()
-    # print(system.list_to_csv(["1", "2", "3", "4", "5", "6"]))
-    # system.list_available_cars()
