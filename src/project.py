@@ -39,10 +39,10 @@ class CarRentalManagementSystem:
         self.close_files()
     
     def open_files(self):
-        self.vehicle_file = open(self.VEHICLES_FILE, "r+")
+        self.vehicle_file = open(self.VEHICLES_FILE, "r")
         self.customer_file = open(self.CUSTOMERS_FILE, "a+")
         self.rented_vehicle_file = open(self.RENTED_VEHICLES_FILE, "a+")
-        self.transaction_file = open(self.TRANSACTION_FILE, "a")
+        self.transaction_file = open(self.TRANSACTION_FILE, "a+")
     
     def close_files(self):
         self.customer_file.close()
@@ -58,6 +58,8 @@ class CarRentalManagementSystem:
     def reinitialize(self):
         self.close_files()
         self.open_files()
+
+# -------------- Data handling --------------
     
     def get_data(self, file):
         data = []
@@ -86,12 +88,15 @@ class CarRentalManagementSystem:
         file.write(data)
     
     def write_customer_data(self, data):
+        self.reinitialize()
         self.write_data(self.customer_file, data)
     
     def write_rented_vehicle_data(self, data):
+        self.reinitialize()
         self.write_data(self.rented_vehicle_file, data)
         
     def write_transaction_data(self, data):
+        self.reinitialize()
         self.write_data(self.transaction_file, data)
                 
     def list_to_csv(self, data: list):
@@ -114,7 +119,9 @@ class CarRentalManagementSystem:
         for vehicle in rented_vehicles:
             print(self.list_to_csv(vehicle))
             self.write_rented_vehicle_data(self.list_to_csv(vehicle))
-      
+
+# -------------- Interface --------------     
+ 
     def print_colored(self, text, color, end="", will_return=True):
         colors = {
             "red": "\033[91m",
@@ -177,6 +184,7 @@ class CarRentalManagementSystem:
         self.print_bar("=")
         
     def print_footer(self):
+        self.println(self.print_success("See you again!"), adjust=9)
         self.print_bar("=")
         self.println(self.print_title(f"Developed by: {self.AUTHOR}"), center=True)
         self.print_bar("=")
@@ -225,31 +233,10 @@ class CarRentalManagementSystem:
             padded_row = row + [""] * (max_cols - len(row))
             print(" | ".join(f"{str(item).ljust(width)}" for item, width in zip(padded_row, col_widths)))
             print("-+-".join("-" * width for width in col_widths))
-    
-    def age(self, birthday: str):
-        today = datetime.now()
-        return today.year - birthday.year - ((today.month, today.day) < (birthday.month, birthday.day))
                     
-    def menu(self, count):
-        if count == 0:
-            self.print_header(header=self.APP_NAME)
-        else:
-            self.print_header(header="Main Menu")
-
-        for key, value in self.menu_options.items():
-            self.println(self.print_info(f"{key}) {value}"), adjust=9)
-        while True:
-            try:
-                option_choice = int(self.take_input("Enter a choice [0-4]: "))
-                option = self.menu_options[str(option_choice)]
-                break
-            except ValueError:
-                self.println(self.print_error("Enter the selection as an integer."), adjust=9)
-            except KeyError:
-                self.println(self.print_error("Unknown selection, please try again."), adjust=9)
-        self.print_bar("=")
-        return option
     
+# --------------- Menu option 1 -----------------
+
     def list_available_cars(self, return_cars=False):
         vehicles = self.get_vehicle_data()
         rented_vehicles = self.get_rented_vehicle_data()
@@ -262,12 +249,63 @@ class CarRentalManagementSystem:
             return available_vehicles
         else:
             self.print_table(available_vehicles, title="Available Cars", headers=self.available_cars_table_header)
+
+# --------------- Menu option 2 -----------------
+
+    def age(self, birthday: str):
+        today = datetime.now()
+        return today.year - birthday.year - ((today.month, today.day) < (birthday.month, birthday.day))
     
+    def check_name(self, name: str):
+        if len(name.split(" ")) > 2:
+            self.println(self.print_error("Please enter single word first name and last name."), adjust=9)
+            return False
+        if not name.isalpha():
+            self.println(self.print_error("Names must contain only letters."), adjust=9)
+            return False
+        if name[0].isupper() and name[1:].islower():
+            return True
+        else:
+            self.println(self.print_error("Names must start with a capital letter."), adjust=9)
+            return False
+            
+    def check_email(self, email: str):
+        if "@" not in email:
+            self.println(self.print_error("Email format not correct."), adjust=9)
+            self.println(self.print_warning("Please enter a valid email address."), adjust=9)
+            return False
+        email_domain = email.split("@")[1]
+        if "." not in email_domain:
+            self.println(self.print_error("Email domain not correct."), adjust=9)
+            self.println(self.print_warning("Please enter a valid email address."), adjust=9)
+            return False
+        email_domain = email_domain.split(".")
+        for parts in email_domain:
+            if not parts.isalpha():
+                if not parts.isdigit():
+                    self.println(self.print_error("Email domain not correct."), adjust=9)
+                    self.println(self.print_warning("Please enter a valid email address."), adjust=9)
+                    return False
+        email_username = email.split("@")[0]
+        allowed_characters = "._"
+        
+        for char in allowed_characters:
+            if char in email_username:
+                email_username = email_username.replace(char, "")
+                
+        if not email_username.isalnum():            
+            self.println(self.print_error("Email username not correct."), adjust=9)
+            self.println(self.print_warning("Please enter a valid email address."), adjust=9)
+            return False
+        
+        return True
+             
     def rent_a_car(self):
-        is_car_available = True
+        is_car_available = False
         is_valid_birthday = False
         is_new_customer = False
         new_rent_query = []
+        new_customer_info = []
         
         self.print_section_title("Rent a Car")
         input_car_no = self.take_input("Enter registration number: ")
@@ -316,6 +354,7 @@ class CarRentalManagementSystem:
                     self.println(self.print_title("Welcome to our car rental service!"),center=True)
                     self.print_bar("-")
                     self.println(self.print_info("Please register with your information below:"), adjust=9)
+                    new_customer_info.append(input_birthday.strftime("%d/%m/%Y"))
                     is_new_customer = True
             else:
                 customer_info = self.search_data(self.get_customer_data(), input_birthday.strftime("%d/%m/%Y"))
@@ -324,11 +363,69 @@ class CarRentalManagementSystem:
                 self.println(f"{self.print_normal("Hi,")} {self.print_title(f"{customer_info[1]}!")} {self.print_normal("Welcome back to our service!")}", adjust=27)
                 self.print_bar("-")
                 new_rent_query.append(input_birthday.strftime("%d/%m/%Y")) 
-                self.println(f"{self.print_normal("Car with registration number")} {self.print_success(input_car_no)} {self.print_normal("has been assigned to you.")}", adjust=27)
+                self.println(f"{self.print_normal("Car with registration number")} {self.print_success(input_car_no)} {self.print_normal("has been assigned to you for renting.")}", adjust=27)
                 new_rent_query.append(datetime.now().strftime("%d/%m/%Y %H:%M"))
                 self.write_rented_vehicle_data(self.list_to_csv(new_rent_query))
-                self.println(self.print_success(f"Rent for {input_car_no} started successfully!"), adjust=9)
-    
+                self.println(self.print_success(f"Thank you for choosing us again!"), adjust=9)
+        
+        if is_new_customer:
+            while True:
+                first_name = self.take_input("Enter the first name: ")
+                last_name = self.take_input("Enter the last name: ")
+                if self.check_name(first_name) and self.check_name(last_name):
+                    new_customer_info.append(first_name)
+                    new_customer_info.append(last_name)
+                    break
+            while True:
+                email = self.take_input("Enter the email: ")
+                if self.check_email(email):
+                    new_customer_info.append(email)
+                    break
+            
+            self.write_customer_data(self.list_to_csv(new_customer_info))
+            self.println(self.print_success("You are now registered!"), adjust=9)
+            new_rent_query.append(input_car_no)
+            self.print_bar("-")
+            self.println(f"{self.print_normal("Hi,")} {self.print_title(f"{first_name}!")} {self.print_normal("Welcome aboard!")}", adjust=27)
+            self.print_bar("-")
+            new_rent_query.append(input_birthday.strftime("%d/%m/%Y")) 
+            self.println(f"{self.print_normal("Car with registration number")} {self.print_success(input_car_no)} {self.print_normal("has been assigned to you for renting.")}", adjust=27)
+            new_rent_query.append(datetime.now().strftime("%d/%m/%Y %H:%M"))
+            self.write_rented_vehicle_data(self.list_to_csv(new_rent_query))
+            self.println(self.print_success(f"Thank you choosing us!"), adjust=9)    
+        
+# --------------- Menu option 3 -----------------
+
+    def return_a_car(self):
+        pass
+
+# --------------- Menu option 4 -----------------
+
+    def count_the_money(self):
+        pass
+
+# ----------------- Main Menu -------------------
+
+    def menu(self, count):
+        if count == 0:
+            self.print_header(header=self.APP_NAME)
+        else:
+            self.print_header(header="Main Menu")
+
+        for key, value in self.menu_options.items():
+            self.println(self.print_info(f"{key}) {value}"), adjust=9)
+        while True:
+            try:
+                option_choice = int(self.take_input("Enter a choice [0-4]: "))
+                option = self.menu_options[str(option_choice)]
+                break
+            except ValueError:
+                self.println(self.print_error("Enter the selection as an integer."), adjust=9)
+            except KeyError:
+                self.println(self.print_error("Unknown selection, please try again."), adjust=9)
+        self.print_bar("=")
+        return option
+
     def main(self):
         iteration_count = 0
         while True:
@@ -343,13 +440,12 @@ class CarRentalManagementSystem:
                 case "Count the money":
                     pass
                 case "Exit":
-                    self.println(self.print_success("See you again!"), adjust=9)
+                    self.print_footer()
                     break
             iteration_count += 1
-        self.print_footer()
-                
+        
 if __name__ == "__main__":
     system = CarRentalManagementSystem()
-    # system.main()
+    system.main()
     # system.rent_a_car()
-    system.write_rented_vehicle_data(system.list_to_csv(['KOL-99', '12/12/1985', '16/11/2024 01:05']))
+    # print(system.check_email(""))
