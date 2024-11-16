@@ -82,7 +82,11 @@ class CarRentalManagementSystem:
         self.write_data(self.transaction_file, data)
                 
     def list_to_csv(self, data: list):
-        return "".join([",".join(data)])+"\n"
+        csv_string = ""
+        for item in data:
+            csv_string += str(item) + ","
+        csv_string = csv_string[:-1] + "\n"
+        return csv_string
     
     def search_data(self, data: list, search_value: str):
         for line in data:
@@ -92,14 +96,14 @@ class CarRentalManagementSystem:
             
     def remove_data_from_rented_vehicles(self, license_plate: str):
         rented_vehicles = self.get_rented_vehicle_data()
-        # print(rented_vehicles)
-        for i, line in enumerate(rented_vehicles):
+        i = 0
+        for line in rented_vehicles:
             if license_plate in line:
                 del rented_vehicles[i]
-                break    
+                break
+            i += 1    
         self.truncate_file(self.RENTED_VEHICLES_FILE)
         for vehicle in rented_vehicles:
-            # print(self.list_to_csv(vehicle))
             self.write_rented_vehicle_data(self.list_to_csv(vehicle))
 
     def date_obj(self, date: str):
@@ -187,6 +191,26 @@ class CarRentalManagementSystem:
                 print(value, end=2*"\t")
             print("")
             
+    def print_table_cell_line(self, separator, char, col_widths):
+        i = 0
+        line = ""
+        for width in col_widths:
+            if i > 0:
+                line += separator
+            line += (char * width)
+            i += 1
+        print(line)
+    
+    def custom_join(self, separator, list):
+        i = 0
+        line = ""
+        for item in list:
+            if i > 0:
+                line += separator
+            line += str(item)
+            i += 1
+        return line
+    
     def print_table(self, data, title=None,headers=None):
         if headers:
             modified_headers = []
@@ -197,29 +221,30 @@ class CarRentalManagementSystem:
         max_cols = max(len(row) for row in data)
         col_widths = [0] * max_cols
         for row in data:
-            for i, item in enumerate(row):
+            i = 0
+            for item in row:
                 col_widths[i] = max(col_widths[i], len(str(item)))
+                i += 1
 
         if title:
             title = self.print_info(title)
-            print("---".join("-" * width for width in col_widths))
+            self.print_table_cell_line("---", "-", col_widths)
             print(f"{title.center(sum(col_widths)+((len(col_widths))*2)+1)}")
-            print("---".join("-" * width for width in col_widths))
+            self.print_table_cell_line("---", "-", col_widths)
             
         if headers:
             data.remove(data[0])
-            print("=+=".join("=" * width for width in col_widths))
-            print(" | ".join(f"{str(item).center(width)}" for item, width in zip(headers, col_widths)))
-            print("=+=".join("=" * width for width in col_widths))
+            self.print_table_cell_line("=+=", "=", col_widths)
+            print(self.custom_join(" | ", (f"{str(item).center(width)}" for item, width in zip(headers, col_widths))))
+            self.print_table_cell_line("=+=", "=", col_widths)
         else:
-            print("-+-".join("-" * width for width in col_widths))
+            self.print_table_cell_line("-+-", "-", col_widths)
         
         for row in data:
             padded_row = row + [""] * (max_cols - len(row))
-            print(" | ".join(f"{str(item).ljust(width)}" for item, width in zip(padded_row, col_widths)))
-            print("-+-".join("-" * width for width in col_widths))
-                    
-    
+            print(self.custom_join(" | ", (f"{str(item).ljust(width)}" for item, width in zip(padded_row, col_widths))))
+            self.print_table_cell_line("-+-", "-", col_widths)
+                        
 # --------------- Menu option 1 -----------------
 
     def list_available_cars(self, return_cars=False):
@@ -514,3 +539,5 @@ class CarRentalManagementSystem:
 if __name__ == "__main__":
     system = CarRentalManagementSystem()
     system.main()
+    # print(system.list_to_csv(["1", "2", "3", "4", "5", "6"]))
+    # system.list_available_cars()
