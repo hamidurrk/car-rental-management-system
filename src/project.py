@@ -118,7 +118,6 @@ class CarRentalManagementSystem:
             "yellow": "\033[93m",
             "blue": "\033[94m",
             "magenta": "\033[95m",
-            "cyan": "\033[96m",
             "white": "\033[97m",
             "reset": "\033[0m"
         }
@@ -266,17 +265,20 @@ class CarRentalManagementSystem:
         return today.year - birthday.year - ((today.month, today.day) < (birthday.month, birthday.day))
     
     def check_name(self, name: str):
-        if len(name.split(" ")) > 2:
+        name = name.strip()
+        if len(name.split(" ")) > 1:
             self.println(self.print_error("Please enter single word first name and last name."), adjust=9)
             return False
         if not name.isalpha():
             self.println(self.print_error("Names must contain only letters."), adjust=9)
             return False
-        if name[0].isupper() and name[1:].islower():
-            return True
-        else:
+        if not name[0].isupper():
             self.println(self.print_error("Names must start with a capital letter."), adjust=9)
             return False
+        if not name[1:].islower():
+            self.println(self.print_error("Only the first letter must be capital."), adjust=9)
+            return False
+        return True
             
     def check_email(self, email: str):
         if "@" not in email:
@@ -316,7 +318,12 @@ class CarRentalManagementSystem:
         allowed_characters = "._"
         
         if allowed_characters in email_username or allowed_characters[::-1] in email_username:
-            self.println(self.print_error("Email username not correct."), adjust=9)
+            self.println(self.print_error("Email username must not contain '.' or '_' side by side."), adjust=9)
+            self.println(self.print_warning("Please enter a valid email address."), adjust=9)
+            return False
+        
+        if ".." in email_username or "__" in email_username:
+            self.println(self.print_error("Email username must not contain '.' or '_' side by side."), adjust=9)
             self.println(self.print_warning("Please enter a valid email address."), adjust=9)
             return False
         
@@ -332,7 +339,7 @@ class CarRentalManagementSystem:
             self.println(self.print_error("Email username not correct."), adjust=9)
             self.println(self.print_warning("Please enter a valid email address."), adjust=9)
             return False
-        
+
         return True
              
     def rent_a_car(self):
@@ -392,7 +399,9 @@ class CarRentalManagementSystem:
                     self.println(self.print_title("Welcome to our car rental service!"),center=True)
                     self.print_bar("-")
                     self.println(self.print_info("Please register with your information below:"), adjust=9)
-                    self.println(self.print_warning("By registering you are consenting to store your personal information in our database."), adjust=9)
+                    self.println(self.print_warning("By registering, you are consenting to store your personal information in our"), adjust=9)
+                    self.println(self.print_warning("database."), adjust=9)
+                    self.println(self.print_info("Names contain only letters and start with a capital letter."), adjust=9)
                     new_customer_info.append(input_birthday.strftime("%d/%m/%Y"))
                     is_new_customer = True
             else:
@@ -431,7 +440,7 @@ class CarRentalManagementSystem:
             self.println(f"{self.print_normal("Car with registration number")} {self.print_success(input_car_no)} {self.print_normal("has been assigned to you for renting.")}", adjust=27)
             new_rent_query.append(datetime.now().strftime("%d/%m/%Y %H:%M"))
             self.write_rented_vehicle_data(self.list_to_csv(new_rent_query))
-            self.println(self.print_success(f"Thank you choosing us!"), adjust=9)    
+            self.println(self.print_success(f"Thank you for choosing us!"), adjust=9)    
         
 # --------------- Menu option 3 -----------------
     
@@ -465,7 +474,7 @@ class CarRentalManagementSystem:
             self.println(self.print_error("Car not owned by the company."), adjust=9)
         else:
             if self.search_data(self.get_rented_vehicle_data(), input_car_no) == None:
-                self.println(self.print_error(f"Car with registration number {input_car_no} is not rented."), adjust=9)
+                self.println(self.print_error(f"Car with registration number {input_car_no} is not being rented."), adjust=9)
             else:
                 self.println(self.print_success(f"The car was rented on {self.search_data(self.get_rented_vehicle_data(), input_car_no)[2]}"), adjust=9)
                 is_car_rented = True
