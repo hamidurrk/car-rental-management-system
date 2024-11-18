@@ -387,7 +387,7 @@ class CarRentalManagementSystem:
                 if self.age(input_birthday) < 18:
                     self.println(self.print_warning("You must be at least 18 years old to rent a car."), adjust=9)
                 elif self.age(input_birthday) > 75:
-                    self.println(self.print_warning("You must be younger than 75 years old to rent a car."), adjust=9)
+                    self.println(self.print_warning("You cannot be older than 75 years to rent a car. Sorry!"), adjust=9)
                 else:
                     self.println(self.print_success("You are eligible to rent a car."), adjust=9)
                     self.print_bar("-")
@@ -413,8 +413,8 @@ class CarRentalManagementSystem:
         
         if is_new_customer:
             while True:
-                first_name = self.take_input("Enter the first name: ")
-                last_name = self.take_input("Enter the last name: ")
+                first_name = self.take_input("Enter the first name: ").strip()
+                last_name = self.take_input("Enter the last name: ").strip()
                 if self.check_name(first_name) and self.check_name(last_name):
                     new_customer_info.append(first_name)
                     new_customer_info.append(last_name)
@@ -429,7 +429,7 @@ class CarRentalManagementSystem:
             self.println(self.print_success("You are now registered!"), adjust=9)
             new_rent_query.append(input_car_no)
             self.print_bar("-")
-            self.println(f"{self.print_normal("Hi,")} {self.print_title(f"{first_name}!")} {self.print_normal("Welcome aboard!")}", adjust=27)
+            self.println(f"{self.print_normal("Hi,")} {self.print_title(f"{first_name}")}{self.print_normal("! Welcome aboard!")}", adjust=27)
             self.print_bar("-")
             new_rent_query.append(input_birthday.strftime("%d/%m/%Y")) 
             self.println(f"{self.print_normal("Car with registration number")} {self.print_success(input_car_no)} {self.print_normal("has been assigned to you for renting.")}", adjust=27)
