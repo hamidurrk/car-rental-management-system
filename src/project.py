@@ -315,15 +315,10 @@ class CarRentalManagementSystem:
                         return False
                     
         email_username = email.split("@")[0]
-        allowed_characters = "._"
-        
-        if allowed_characters in email_username or allowed_characters[::-1] in email_username:
-            self.println(self.print_error("Email username must not contain '.' or '_' side by side."), adjust=9)
-            self.println(self.print_warning("Please enter a valid email address."), adjust=9)
-            return False
-        
-        if ".." in email_username or "__" in email_username:
-            self.println(self.print_error("Email username must not contain '.' or '_' side by side."), adjust=9)
+        allowed_characters = "."
+                
+        if ".." in email_username:
+            self.println(self.print_error("Email username must not contain '.' side by side."), adjust=9)
             self.println(self.print_warning("Please enter a valid email address."), adjust=9)
             return False
         
